@@ -22,14 +22,14 @@ defmodule LlmJobSystem.Workers.JobWorker do
   @impl true
   def handle_info(:process, job) do
     updated_job =
-      Job.complete(
-        job,
-        "The job has successfully completed"
-      )
+      Job.complete(job, "The job has successfully completed")
 
-      JobQueue.update_job(updated_job)
+    send(
+      LlmJobSystem.Jobs.Dispatcher,
+      {:job_completed, updated_job}
+    )
 
-      {:stop, :normal, updated_job}
+    {:stop, :normal, updated_job}
   end
 
 end

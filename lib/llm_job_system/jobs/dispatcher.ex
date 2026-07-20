@@ -56,6 +56,13 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
     {:noreply, new_state}
   end
 
+  @impl true
+  def handle_info({:job_completed, job}, state) do
+    LlmJobSystem.Jobs.JobQueue.update_job(job)
+
+    {:noreply, state}
+  end
+
 
   ## Private
 
