@@ -36,4 +36,33 @@ defmodule LlmJobSystem.Jobs.Job do
     inserted_at: DateTime.utc_now()
   ]
 
+  @spec start(t()) :: t()
+  def start(job) do
+    %{
+      job
+      | status: :running, started_at: DateTime.utc_now(), error: nil
+    }
+  end
+
+  @spec complete(t(), String.t()) :: t()
+  def complete(job, result) do
+    %{
+      job
+      | status: :completed, result: result, completed_at: DateTime.utc_now()
+    }
+  end
+
+  @spec fail(t(), term()) :: t()
+  def fail(job, reason) do
+    %{
+      job
+      | status: :failed, error: reason, retries: job.retries + 1
+    }
+  end
+
+  @spec retryable?(t()) :: boolean()
+  def retryable?(job) do
+    job.retries < job.max_retries
+  end
+
 end
