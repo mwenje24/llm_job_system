@@ -7,8 +7,6 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
 
   alias LlmJobSystem.Jobs.JobQueue
 
-  @poll_interval 100
-
   # client
   def start_link(opts \\ []) do
     GenServer.start_link(
@@ -21,16 +19,12 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
   # server
   @impl true
   def init(state) do
-    send(self(), :dipatch)
-
     {:ok, state}
   end
 
   @impl true
   def handle_info(:dispatch, state) do
     dispatch_job()
-
-    Process.send_after(self(), :dispatch, @poll_interval)
 
     {:noreply, state}
   end
@@ -42,6 +36,11 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
           LlmJobSystem.Workers.JobSupervisor,
           {LlmJobSystem.Workers.JobWorker, job}
         )
+
+        dispatch_job()
+
+      :empty ->
+        :ok
     end
   end
 
