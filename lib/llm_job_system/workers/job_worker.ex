@@ -29,8 +29,6 @@ defmodule LlmJobSystem.Workers.JobWorker do
 
       JobQueue.update_job(updated_job)
 
-      send(LlmJobSystem.Jobs.Dispatcher, :dispatch)
-
       {:stop, :normal, updated_job}
   end
 

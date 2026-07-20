@@ -8,8 +8,9 @@ defmodule LlmJobSystem.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: LlmJobSystem.Worker.start_link(arg)
-      # {LlmJobSystem.Worker, arg}
+      {LlmJobSystem.Workers.JobSupervisor, []},
+      {LlmJobSystem.Jobs.JobQueue, []},
+      {LlmJobSystem.Jobs.Dispatcher, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
