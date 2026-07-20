@@ -73,9 +73,20 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   def handle_call(:next_job, _from, state) do
     case :queue.out(state.queue) do
       {{:value, job_id}, queue} ->
-        job = Map.fetch!(state.jobs, job_id)
+        job =
+          state.jobs
+          |> Map.fetch!(job_id)
+          |> Job.start()
 
-        {:reply, {:ok, job}, %{state | queue: queue}}
+        jobs =
+          Map.put(state.jobs, job.id, job)
+
+        new_state = %{
+          state
+          | queue: queue, jobs: jobs
+        }
+
+        {:reply, {:ok, job}, new_state}
 
       {:empty, _queue} -> {:reply, :empty, state}
     end
