@@ -21,15 +21,28 @@ defmodule LlmJobSystem.Workers.JobWorker do
 
   @impl true
   def handle_info(:process, job) do
-    updated_job =
-      Job.complete(job, "The job has successfully completed")
+    try do
+      updated_job =
+        Job.complete(job, "The job has successfully completed")
 
-    send(
-      LlmJobSystem.Jobs.Dispatcher,
-      {:job_completed, updated_job}
-    )
+      send(
+        LlmJobSystem.Jobs.Dispatcher,
+        {:job_completed, updated_job}
+      )
 
-    {:stop, :normal, updated_job}
+      {:stop, :normal, updated_job}
+    rescue
+      exception ->
+        update_job =
+          Job.record_failure(job, exception)
+
+        send(
+          LlmJobSystem.Jobs.Dispatcher,
+          {:job_failed, update_job}
+        )
+
+        {:stop, :normal, update_job}
+    end
   end
 
 end
