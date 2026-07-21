@@ -29,6 +29,10 @@ You should get something like
 
 {:ok, "7d22d4b8-5a1b-4b3e-a1f5-..."}
 
+>{:ok, id1} = LlmJobSystem.Jobs.JobQueue.add_job("Job 1")
+>{:ok, id2} = LlmJobSystem.Jobs.JobQueue.add_job("Job 2")
+>{:ok, id3} = LlmJobSystem.Jobs.JobQueue.add_job("Job 3")
+
 Retrieve the job
 
 >job = LlmJobSystem.Jobs.JobQueue.get_job(job_id)

@@ -6,6 +6,8 @@ defmodule LlmJobSystem.Workers.JobWorker do
 
   use GenServer
 
+  require Logger
+
   alias LlmJobSystem.Jobs.Job
 
   def start_link(%Job{} = job) do
@@ -25,6 +27,8 @@ defmodule LlmJobSystem.Workers.JobWorker do
       updated_job =
         Job.complete(job, "The job has successfully completed")
 
+      Logger.info("Completed job #{job.id}")
+
       send(
         LlmJobSystem.Jobs.Dispatcher,
         {:job_completed, updated_job}
@@ -33,6 +37,11 @@ defmodule LlmJobSystem.Workers.JobWorker do
       {:stop, :normal, updated_job}
     rescue
       exception ->
+        Logger.error("""
+        Job #{job.id} failed:
+        #{Exception.message(exception)}
+        """)
+
         update_job =
           Job.record_failure(job, exception)
 
