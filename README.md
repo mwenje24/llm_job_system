@@ -23,7 +23,7 @@ be found at <https://hexdocs.pm/llm_job_system>.
 test samples
 start IEx
 
-> {:ok, job_id} = LlmJobSystem.Jobs.JobQueue.add_job("Explain OTP in simple terms.")
+>{:ok, job_id} = LlmJobSystem.Jobs.JobQueue.add_job("Explain OTP in simple terms.")
 
 You should get something like
 
@@ -31,7 +31,7 @@ You should get something like
 
 Retrieve the job
 
-> job = LlmJobSystem.Jobs.JobQueue.get_job(job_id)
+>job = LlmJobSystem.Jobs.JobQueue.get_job(job_id)
 
 You should get something like
 
@@ -50,7 +50,7 @@ You should get something like
 
 Inspect all jobs
 
-> LlmJobSystem.Jobs.JobQueue.list_jobs()
+>LlmJobSystem.Jobs.JobQueue.list_jobs()
 
 You should get something like
 
@@ -97,7 +97,7 @@ iex(9)> LlmJobSystem.Jobs.JobQueue.list_jobs()
 
 add multiple jobs
 
-> for i <- 1..5 do  LlmJobSystem.Jobs.JobQueue.add_job("Job #{i}")end
+>for i <- 1..5 do  LlmJobSystem.Jobs.JobQueue.add_job("Job #{i}")end
 
 
 You should get something like
@@ -109,3 +109,12 @@ You should get something like
   ok: "d142779c-eb3e-453a-9d87-6c0ad0a68ee6",
   ok: "46bb3acb-d29a-4c67-9d1f-1b7ce7df576d"
 ]
+
+
+trying out backoff implementation
+
+>LlmJobSystem.Retry.Backoff.delay(0)
+
+You should get something like
+500
+

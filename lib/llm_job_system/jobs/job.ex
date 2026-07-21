@@ -4,7 +4,7 @@ defmodule LlmJobSystem.Jobs.Job do
   """
   @enforce_keys [:id, :prompt]
 
-  @type status :: :pending | :running | :completed | :failed
+  @type status :: :pending | :running | :retrying | :completed | :failed
 
   @type t :: %__MODULE__{
     id: String.t(),

@@ -1,6 +1,6 @@
 defmodule LlmJobSystem.Jobs.Dispatcher do
   @moduledoc """
-  dispatches queued jobs to worker processes - scheduling
+  dispatches queued jobs to worker processes - makes scheduling decisions
   """
 
   use GenServer
@@ -45,6 +45,7 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
 
   @impl true
   def handle_info({:DOWN, ref, :process, _pid, _reason}, state) do
+    # The {:DOWN, ref, :process, pid, reason} message will tell us the worker has exited, the Dispatcher can then safely decrement running jobs and free a slot.
     new_state = %{
       state
       | running_jobs: state.running_jobs - 1,
@@ -58,7 +59,27 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
 
   @impl true
   def handle_info({:job_completed, job}, state) do
+    # The {:job_completed, job} message tells us what happened
     LlmJobSystem.Jobs.JobQueue.update_job(job)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:retry_job, job}, state) do
+    JobQueue.requeue_job(job)
+
+    send(self(), :dispatch)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:job_failed, job}, state) do
+    if LlmJobSystem.Jobs.Job.retryable?(job) do
+      schedule_retry(job)
+    else
+      JobQueue.update_job(job)
+    end
 
     {:noreply, state}
   end
@@ -104,5 +125,16 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
       :empty ->
         state
     end
+  end
+
+  defp schedule_retry(job) do
+    delay =
+      LlmJobSystem.Retry.Backoff.delay(job.retries)
+
+      Process.send_after(
+        self(),
+        {:retry_job, job},
+        delay
+      )
   end
 end

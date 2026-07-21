@@ -1,6 +1,6 @@
 defmodule LlmJobSystem.Jobs.JobQueue do
   @moduledoc """
-  Store and manage jobs in memory
+  Store and manages jobs in memory/state
   """
   use GenServer
 
@@ -36,6 +36,12 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   def list_jobs do
     GenServer.call(__MODULE__, :list_jobs)
   end
+
+  def requeue_job(job) do
+    GenServer.call(__MODULE__, {:requeue_job, job})
+  end
+
+
 
   # server callbacks
   @impl true
@@ -108,6 +114,22 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   @impl true
   def handle_call(:list_jobs, _from, state) do
     {:reply, Map.values(state.jobs), state}
+  end
+
+  @impl true
+  def handle_call({:requeue_job, job}, _from, state) do
+    queue =
+      :queue.in(job.id, state.queue)
+
+    jobs =
+      Map.put(state.jobs, job.id, job)
+
+    new_state = %{
+      state
+      | queue: queue, jobs: jobs
+    }
+
+    {:reply, :ok, new_state}
   end
 
 end

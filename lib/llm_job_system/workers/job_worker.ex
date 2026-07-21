@@ -1,12 +1,11 @@
 defmodule LlmJobSystem.Workers.JobWorker do
   @moduledoc """
-  processes a single job
+  processes a single job/executes work
   """
 
   use GenServer
 
   alias LlmJobSystem.Jobs.Job
-  alias LlmJobSystem.Jobs.JobQueue
 
   def start_link(%Job{} = job) do
     GenServer.start_link(__MODULE__, job)
