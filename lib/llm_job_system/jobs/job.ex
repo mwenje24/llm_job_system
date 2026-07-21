@@ -1,6 +1,6 @@
 defmodule LlmJobSystem.Jobs.Job do
   @moduledoc """
-  Single LLM processing job
+  Will defines state transitions
   """
   @enforce_keys [:id, :prompt]
 
@@ -52,11 +52,27 @@ defmodule LlmJobSystem.Jobs.Job do
     }
   end
 
-  @spec fail(t(), term()) :: t()
-  def fail(job, reason) do
+  @spec record_failure(t(), term()) :: t()
+  def record_failure(job, reason) do
     %{
       job
-      | status: :failed, error: reason, retries: job.retries + 1
+      | status: :retrying, error: reason, retries: job.retries + 1
+    }
+  end
+
+  @spec retry(t) :: t()
+  def retry(job) do
+    %{
+      job
+      | status: :pending, error: nil
+    }
+  end
+
+  @spec mark_failed(t()) :: t()
+  def mark_failed(job) do
+    %{
+      job
+      | status: :failed, completed_at: DateTime.utc_now()
     }
   end
 
@@ -64,5 +80,6 @@ defmodule LlmJobSystem.Jobs.Job do
   def retryable?(job) do
     job.retries < job.max_retries
   end
+
 
 end

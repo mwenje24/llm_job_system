@@ -1,10 +1,12 @@
 defmodule LlmJobSystem.Jobs.Dispatcher do
   @moduledoc """
-  dispatches queued jobs to worker processes - makes scheduling decisions
+  dispatches queued jobs to worker processes
+  makes scheduling decisions
   """
 
   use GenServer
 
+  alias LlmJobSystem.Jobs.Job
   alias LlmJobSystem.Jobs.JobQueue
   alias LlmJobSystem.Workers.JobSupervisor
   alias LlmJobSystem.Workers.JobWorker
@@ -72,6 +74,9 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
         {:noreply, state}
 
       job ->
+        job =
+          LlmJobSystem.Jobs.Job.retry(job)
+
         JobQueue.requeue_job(job)
 
         send(self(), :dispatch)
@@ -82,9 +87,11 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
   @impl true
   def handle_info({:job_failed, job}, state) do
     if LlmJobSystem.Jobs.Job.retryable?(job) do
+      JobQueue.update_job(job)
+
       schedule_retry(job)
     else
-      JobQueue.update_job(job)
+      JobQueue.update_job(Job.mark_failed(job))
     end
 
     {:noreply, state}

@@ -1,6 +1,7 @@
 defmodule LlmJobSystem.Jobs.JobQueue do
   @moduledoc """
-  Store and manages jobs in memory/state
+  Store and manages jobs in memory
+  Persists latest job state
   """
   use GenServer
 

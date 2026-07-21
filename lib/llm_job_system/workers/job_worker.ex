@@ -1,6 +1,7 @@
 defmodule LlmJobSystem.Workers.JobWorker do
   @moduledoc """
-  processes a single job/executes work
+  processes a single job
+  executes work and reports the outcome.
   """
 
   use GenServer
