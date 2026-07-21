@@ -28,6 +28,7 @@ defmodule LlmJobSystem.Jobs.Job do
     error: nil,
     status: :pending,
     retries: 0,
+    priority: :normal,
     max_retries: Application.compile_env(
       :llm_job_system,
       :max_retries,
@@ -35,6 +36,30 @@ defmodule LlmJobSystem.Jobs.Job do
     ),
     inserted_at: DateTime.utc_now()
   ]
+
+  @priorities [:high, :normal, :low]
+
+  def new(prompt, opts \\ []) do
+    priority =
+      Keyword.get(opts, :priority, :normal)
+
+    unless priority in [:high, :normal, :low] do
+      raise ArgumentError,
+            "invalid priority: #{inspect(priority)}"
+    end
+
+    unless priority in @priorities do
+      raise ArgumentError,
+        "invalid priority #{inspect(priority)}"
+    end
+
+    %__MODULE__{
+      id: UUID.uuid4(),
+      prompt: prompt,
+      priority: priority,
+      status: :queued
+    }
+  end
 
   @spec start(t()) :: t()
   def start(job) do

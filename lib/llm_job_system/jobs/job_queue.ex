@@ -14,8 +14,8 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   end
 
   # add new job to the queue
-  def add_job(prompt) when is_binary(prompt) do
-    GenServer.call(__MODULE__, {:add_job, prompt})
+  def add_job(prompt, opts \\ []) when is_binary(prompt) do
+    GenServer.call(__MODULE__, {:add_job, prompt, opts})
   end
 
   # get the next pending job
@@ -49,53 +49,50 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   def init(_) do
     {:ok,
       %{
-        queue: :queue.new(),
+        high: :queue.new(),
+        normal: :queue.new(),
+        low: :queue.new(),
         jobs: %{}
       }
     }
   end
 
   @impl true
-  def handle_call({:add_job, prompt}, _from, state) do
-    job =
-      %Job{
-        id: UUID.uuid4(),
-        prompt: prompt
-      }
+  def handle_call({:add_job, prompt, opts}, _from, state) do
+    priority =
+      Keyword.get(opts, :priority, :normal)
+
+    job = %Job{
+      id: UUID.uuid4(),
+      prompt: prompt,
+      priority: priority
+    }
 
     queue =
-      :queue.in(job.id, state.queue)
+      Map.fetch!(state, priority)
 
-    jobs =
-      Map.put(state.jobs, job.id, job
+    updated_queue =
+      :queue.in(job.id, queue)
+
+    new_state =
+      state
+      |> Map.put(priority, updated_queue)
+      |> Map.put(
+        :jobs,
+        Map.put(state.jobs, job.id, job)
       )
-
-    new_state=
-      %{state | queue: queue, jobs: jobs}
 
     {:reply, {:ok, job.id}, new_state}
   end
 
   @impl true
   def handle_call(:next_job, _from, state) do
-    case :queue.out(state.queue) do
-      {{:value, job_id}, queue} ->
-        job =
-          state.jobs
-          |> Map.fetch!(job_id)
-          |> Job.start()
-
-        jobs =
-          Map.put(state.jobs, job.id, job)
-
-        new_state = %{
-          state
-          | queue: queue, jobs: jobs
-        }
-
+    case dequeue(state) do
+      {:ok, job, new_state} ->
         {:reply, {:ok, job}, new_state}
 
-      {:empty, _queue} -> {:reply, :empty, state}
+      :empty ->
+        {:reply, :empty, state}
     end
   end
 
@@ -120,17 +117,61 @@ defmodule LlmJobSystem.Jobs.JobQueue do
   @impl true
   def handle_call({:requeue_job, job}, _from, state) do
     queue =
-      :queue.in(job.id, state.queue)
+      Map.fetch!(
+        state,
+        job.priority
+      )
 
-    jobs =
-      Map.put(state.jobs, job.id, job)
+    updated_queue =
+      :queue.in(
+        job.id,
+        queue
+      )
 
-    new_state = %{
+    new_state =
       state
-      | queue: queue, jobs: jobs
-    }
+      |> Map.put(job.priority, updated_queue)
+      |> Map.put(
+        :jobs,
+        Map.put(state.jobs, job.id, job)
+      )
 
     {:reply, :ok, new_state}
+
+  end
+
+  defp dequeue(state) do
+    with :empty <- pop(state, :high),
+        :empty <- pop(state, :normal),
+        :empty <- pop(state, :low) do
+      :empty
+    end
+  end
+
+  defp pop(state, priority) do
+    queue =
+      Map.fetch!(state, priority)
+
+    case :queue.out(queue) do
+      {{:value, job_id}, updated_queue} ->
+        job =
+          state.jobs
+          |> Map.fetch!(job_id)
+          |> Job.start()
+
+        jobs =
+          Map.put(state.jobs, job.id, job)
+
+        new_state =
+          state
+          |> Map.put(priority, updated_queue)
+          |> Map.put(:jobs, jobs)
+
+        {:ok, job, new_state}
+
+      {:empty, _} ->
+        :empty
+    end
   end
 
 end
