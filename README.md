@@ -85,7 +85,7 @@ The solution demonstrates:
 
 ## OTP-first Architecture
 
-The implementation intentionally uses native OTP primitives rather than external job libraries.
+The implementation uses native OTP primitives.
 
 Components are isolated by responsibility:
 
@@ -214,7 +214,7 @@ LLM_PROVIDER=openai
 
 ---
 
-## Telemetry Metrics
+## Metrics
 
 The system emits telemetry events during execution.
 
@@ -401,12 +401,8 @@ Potential production enhancements include:
 
 - Persistent queue (ETS/PostgreSQL)
 - Job cancellation
-- Scheduled jobs
-- Dead-letter queue
 - Worker timeout handling
 - Graceful shutdown recovery
-- Prometheus metrics
-- OpenTelemetry tracing
 - Comprehensive ExUnit test suite
 
 ---
@@ -421,7 +417,6 @@ A full ExUnit test suite is planned covering:
 - Worker execution
 - Retry logic
 - LLM provider mocking
-- Integration tests
 
 ---
 
