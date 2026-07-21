@@ -66,11 +66,17 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
   end
 
   @impl true
-  def handle_info({:retry_job, job}, state) do
-    JobQueue.requeue_job(job)
+  def handle_info({:retry_job, job_id}, state) do
+    case JobQueue.get_job(job_id) do
+      nil ->
+        {:noreply, state}
 
-    send(self(), :dispatch)
-    {:noreply, state}
+      job ->
+        JobQueue.requeue_job(job)
+
+        send(self(), :dispatch)
+        {:noreply, state}
+    end
   end
 
   @impl true
@@ -133,7 +139,7 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
 
       Process.send_after(
         self(),
-        {:retry_job, job},
+        {:retry_job, job.id},
         delay
       )
   end
