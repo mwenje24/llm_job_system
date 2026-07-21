@@ -23,35 +23,29 @@ defmodule LlmJobSystem.Workers.JobWorker do
 
   @impl true
   def handle_info(:process, job) do
-    try do
-      updated_job =
-        Job.complete(job, "The job has successfully completed")
+    Logger.info("Processing job #{job.id}")
 
-      Logger.info("Completed job #{job.id}")
+      case LlmJobSystem.Llm.Client.chat(job.prompt) do
+        {:ok, response} ->
+          updated_job =
+            Job.complete(job, response)
 
-      send(
-        LlmJobSystem.Jobs.Dispatcher,
-        {:job_completed, updated_job}
-      )
+          send(
+            LlmJobSystem.Jobs.Dispatcher,
+            {:job_completed, updated_job}
+          )
 
-      {:stop, :normal, updated_job}
-    rescue
-      exception ->
-        Logger.error("""
-        Job #{job.id} failed:
-        #{Exception.message(exception)}
-        """)
+        {:error, reason} ->
+          updated_job =
+            Job.record_failure(job, reason)
 
-        update_job =
-          Job.record_failure(job, exception)
+          send(
+            LlmJobSystem.Jobs.Dispatcher,
+            {:job_failed, updated_job}
+          )
+      end
 
-        send(
-          LlmJobSystem.Jobs.Dispatcher,
-          {:job_failed, update_job}
-        )
-
-        {:stop, :normal, update_job}
-    end
+    {:stop, :normal, job}
   end
 
 end
