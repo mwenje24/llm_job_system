@@ -25,7 +25,8 @@ defmodule LlmJobSystem.MixProject do
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
       {:uuid, "~> 1.1"},
-      {:mox, "~> 1.2", only: :test}
+      {:mox, "~> 1.2", only: :test},
+      {:plug_cowboy, "~> 2.7"}
     ]
   end
 end

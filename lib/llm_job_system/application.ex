@@ -5,12 +5,19 @@ defmodule LlmJobSystem.Application do
 
   @impl true
   def start(_type, _args) do
-    LlmJobSystem.Metrics.Logger.attach()
-
     children = [
+      LlmJobSystem.Metrics.Logger,
       {LlmJobSystem.Workers.JobSupervisor, []},
       {LlmJobSystem.Jobs.JobQueue, []},
-      {LlmJobSystem.Jobs.Dispatcher, []}
+      {LlmJobSystem.Jobs.Dispatcher, []},
+      {
+        Plug.Cowboy,
+        scheme: :http,
+        plug: LlmJobSystem.API.Router,
+        options: [
+          port: 4000
+        ]
+      }
     ]
 
     opts = [

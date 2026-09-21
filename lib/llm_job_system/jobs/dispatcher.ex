@@ -21,6 +21,10 @@ defmodule LlmJobSystem.Jobs.Dispatcher do
     )
   end
 
+  def dispatch do
+    send(__MODULE__, :dispatch)
+  end
+
 
   ## Server
 

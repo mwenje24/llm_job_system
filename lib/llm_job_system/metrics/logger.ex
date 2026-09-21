@@ -21,7 +21,7 @@ defmodule LlmJobSystem.Metrics.Logger do
         [:llm_job_system, :job, :failed],
         [:llm_job_system, :job, :retried]
       ],
-      &handle_event/4,
+      &__MODULE__.handle_event/4,
       nil
     )
   end
